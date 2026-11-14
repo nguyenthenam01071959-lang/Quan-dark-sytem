@@ -1,0 +1,817 @@
+--[[
+QUAN DARK SYSTEM V3 FULL MERGED
+PART 1/2
+Dán PART 2 ngay bên dưới.
+]]
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local pg = player:WaitForChild("PlayerGui")
+
+local old = pg:FindFirstChild("QUAN_DARK_SYSTEM")
+if old then old:Destroy() end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "QUAN_DARK_SYSTEM"
+gui.ResetOnSpawn = false
+gui.Parent = pg
+
+local function corner(obj,r)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0,r)
+    c.Parent = obj
+end
+
+local function stroke(obj,color)
+    local s = Instance.new("UIStroke")
+    s.Color = color
+    s.Thickness = 1.4
+    s.Parent = obj
+end
+
+local function makeButton(parent,txt,pos,size)
+    local b = Instance.new("TextButton")
+    b.Position = pos
+    b.Size = size
+    b.BackgroundColor3 = Color3.fromRGB(28,35,43)
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Text = txt
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 12
+    b.Parent = parent
+    corner(b,7)
+    return b
+end
+
+-- STARTUP
+local intro = Instance.new("Frame")
+intro.Size = UDim2.fromScale(1,1)
+intro.BackgroundColor3 = Color3.fromRGB(5,7,12)
+intro.Parent = gui
+
+local logo = Instance.new("TextLabel")
+logo.Size = UDim2.new(1,0,0,65)
+logo.Position = UDim2.new(0,0,0.35,0)
+logo.BackgroundTransparency = 1
+logo.Text = "QUAN"
+logo.TextColor3 = Color3.fromRGB(0,180,255)
+logo.Font = Enum.Font.GothamBlack
+logo.TextSize = 42
+logo.Parent = intro
+
+local subtitle = Instance.new("TextLabel")
+subtitle.Size = UDim2.new(1,0,0,30)
+subtitle.Position = UDim2.new(0,0,0.46,0)
+subtitle.BackgroundTransparency = 1
+subtitle.Text = "DARK SYSTEM V3"
+subtitle.TextColor3 = Color3.new(1,1,1)
+subtitle.Font = Enum.Font.GothamBold
+subtitle.TextSize = 16
+subtitle.Parent = intro
+
+local barBG = Instance.new("Frame")
+barBG.Size = UDim2.new(0.65,0,0,7)
+barBG.Position = UDim2.new(0.175,0,0.57,0)
+barBG.BackgroundColor3 = Color3.fromRGB(35,35,40)
+barBG.Parent = intro
+corner(barBG,10)
+
+local bar = Instance.new("Frame")
+bar.Size = UDim2.new(0,0,1,0)
+bar.BackgroundColor3 = Color3.fromRGB(0,170,255)
+bar.Parent = barBG
+corner(bar,10)
+
+TweenService:Create(
+    bar,TweenInfo.new(1.2,Enum.EasingStyle.Quad),
+    {Size=UDim2.fromScale(1,1)}
+):Play()
+
+task.wait(1.3)
+intro:Destroy()
+
+-- MAIN PANEL
+local panel = Instance.new("Frame")
+panel.Name = "MainPanel"
+panel.Size = UDim2.fromOffset(280,340)
+panel.Position = UDim2.new(0.5,-140,0.5,-170)
+panel.BackgroundColor3 = Color3.fromRGB(12,14,20)
+panel.Parent = gui
+corner(panel,12)
+stroke(panel,Color3.fromRGB(0,145,230))
+
+local header = Instance.new("TextLabel")
+header.Size = UDim2.new(1,-75,0,42)
+header.Position = UDim2.fromOffset(12,0)
+header.BackgroundTransparency = 1
+header.Text = "QUAN DARK SYSTEM"
+header.TextColor3 = Color3.fromRGB(0,180,255)
+header.Font = Enum.Font.GothamBlack
+header.TextSize = 14
+header.TextXAlignment = Enum.TextXAlignment.Left
+header.Parent = panel
+
+local minimize = makeButton(panel,"—",
+    UDim2.new(1,-62,0,7),UDim2.fromOffset(25,25))
+local close = makeButton(panel,"×",
+    UDim2.new(1,-32,0,7),UDim2.fromOffset(25,25))
+
+local dummyTab = makeButton(panel,"01 | DUMMY",
+    UDim2.fromOffset(10,52),UDim2.new(1/3,-10,0,34))
+local doorTab = makeButton(panel,"02 | DOOR",
+    UDim2.fromOffset(100,52),UDim2.new(1/3,-10,0,34))
+local candyTab = makeButton(panel,"03 | CANDY",
+    UDim2.fromOffset(190,52),UDim2.new(1/3,-10,0,34))
+
+local content = Instance.new("Frame")
+content.Position = UDim2.fromOffset(10,96)
+content.Size = UDim2.new(1,-20,1,-106)
+content.BackgroundTransparency = 1
+content.Parent = panel
+
+local dummyPage = Instance.new("Frame")
+dummyPage.Size = UDim2.fromScale(1,1)
+dummyPage.BackgroundTransparency = 1
+dummyPage.Parent = content
+
+local doorPage = Instance.new("Frame")
+doorPage.Size = UDim2.fromScale(1,1)
+doorPage.BackgroundTransparency = 1
+doorPage.Visible = false
+doorPage.Parent = content
+
+local candyPage = Instance.new("Frame")
+candyPage.Size = UDim2.fromScale(1,1)
+candyPage.BackgroundTransparency = 1
+candyPage.Visible = false
+candyPage.Parent = content
+
+local function label(parent,txt,y)
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(1,0,0,27)
+    l.Position = UDim2.fromOffset(0,y)
+    l.BackgroundTransparency = 1
+    l.TextColor3 = Color3.new(1,1,1)
+    l.Font = Enum.Font.Gotham
+    l.TextSize = 12
+    l.Text = txt
+    l.Parent = parent
+    return l
+end
+
+local function pageButton(parent,txt,y)
+    return makeButton(parent,txt,
+        UDim2.fromOffset(0,y),UDim2.new(1,0,0,31))
+end
+
+local function showPage(page)
+    dummyPage.Visible = page == dummyPage
+    doorPage.Visible = page == doorPage
+    candyPage.Visible = page == candyPage
+end
+
+dummyTab.Activated:Connect(function()
+    showPage(dummyPage)
+end)
+
+doorTab.Activated:Connect(function()
+    showPage(doorPage)
+end)
+
+candyTab.Activated:Connect(function()
+    showPage(candyPage)
+end)
+
+local reopen = makeButton(gui,"Q",
+    UDim2.new(0,15,0.35,0),UDim2.fromOffset(43,43))
+reopen.BackgroundColor3 = Color3.fromRGB(0,110,190)
+reopen.Visible = false
+
+minimize.Activated:Connect(function()
+    panel.Visible = false
+    reopen.Visible = true
+end)
+
+close.Activated:Connect(function()
+    panel.Visible = false
+    reopen.Visible = true
+end)
+
+reopen.Activated:Connect(function()
+    panel.Visible = true
+    reopen.Visible = false
+end)
+
+-- DRAG MENU
+local dragging = false
+local dragStart
+local startPos
+
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch
+    or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = panel.Position
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and (
+        input.UserInputType == Enum.UserInputType.Touch
+        or input.UserInputType == Enum.UserInputType.MouseMovement
+    ) then
+        local delta = input.Position-dragStart
+        panel.Position = UDim2.new(
+            startPos.X.Scale,startPos.X.Offset+delta.X,
+            startPos.Y.Scale,startPos.Y.Offset+delta.Y
+        )
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch
+    or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+-- DUMMY
+local dummies = {}
+local selectedDummy = 1
+local espOn = true
+local alertOn = true
+local known = {}
+local newCount = 0
+
+local dummyInfo = label(dummyPage,"Đang tìm Dummy...",0)
+local dummyCounter = label(dummyPage,"Dummy mới: 0",28)
+
+local dummyPrev = pageButton(dummyPage,"PREVIOUS",62)
+local dummyNext = pageButton(dummyPage,"NEXT",99)
+local dummyTele = pageButton(dummyPage,"TELEPORT",136)
+local dummyESP = pageButton(dummyPage,"ESP: ON",173)
+local dummyScan = pageButton(dummyPage,"RESCAN",210)
+local dummyAlert = pageButton(dummyPage,"ALERT: ON",247)
+
+local function isDummy(obj)
+    return obj:IsA("Model")
+        and obj:FindFirstChildOfClass("Humanoid")
+        and obj:FindFirstChild("HumanoidRootPart")
+        and not Players:GetPlayerFromCharacter(obj)
+end
+
+local function notifyDummy(name)
+    if not alertOn then return end
+    pcall(function()
+        StarterGui:SetCore("SendNotification",{
+            Title="QUAN ALERT",
+            Text="Dummy mới: "..name,
+            Duration=3
+        })
+    end)
+end
+
+local function scanDummies()
+    local oldSelected = dummies[selectedDummy]
+    table.clear(dummies)
+
+    for _,obj in ipairs(Workspace:GetDescendants()) do
+        if isDummy(obj) then
+            table.insert(dummies,obj)
+            if not known[obj] then
+                known[obj] = true
+                newCount += 1
+                notifyDummy(obj.Name)
+            end
+        end
+    end
+
+    table.sort(dummies,function(a,b)
+        return a:GetFullName()<b:GetFullName()
+    end)
+
+    if oldSelected then
+        for i,obj in ipairs(dummies) do
+            if obj == oldSelected then
+                selectedDummy = i
+                break
+            end
+        end
+    end
+
+    selectedDummy = math.clamp(
+        selectedDummy,1,math.max(1,#dummies))
+end
+
+local function updateDummy()
+    local d = dummies[selectedDummy]
+    dummyInfo.Text = d and
+        (d.Name.." ("..selectedDummy.."/"..#dummies..")")
+        or "Không tìm thấy Dummy"
+
+    dummyCounter.Text = "Dummy mới: "..newCount
+
+    for _,obj in ipairs(dummies) do
+        local h = obj:FindFirstChild("QUAN_DUMMY_ESP")
+
+        if espOn and not h then
+            h = Instance.new("Highlight")
+            h.Name = "QUAN_DUMMY_ESP"
+            h.FillColor = Color3.fromRGB(0,140,255)
+            h.OutlineColor = Color3.new(1,1,1)
+            h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            h.Parent = obj
+        elseif not espOn and h then
+            h:Destroy()
+        end
+    end
+end
+
+dummyPrev.Activated:Connect(function()
+    if #dummies == 0 then return end
+    selectedDummy = (selectedDummy-2)%#dummies+1
+    updateDummy()
+end)
+
+dummyNext.Activated:Connect(function()
+    if #dummies == 0 then return end
+    selectedDummy = selectedDummy%#dummies+1
+    updateDummy()
+end)
+
+dummyTele.Activated:Connect(function()
+    local d = dummies[selectedDummy]
+    local target = d and d:FindFirstChild("HumanoidRootPart")
+    local char = player.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+
+    if target and root then
+        root.CFrame = target.CFrame*CFrame.new(4,0,0)
+    end
+end)
+
+dummyESP.Activated:Connect(function()
+    espOn = not espOn
+    dummyESP.Text = espOn and "ESP: ON" or "ESP: OFF"
+    updateDummy()
+end)
+
+dummyScan.Activated:Connect(function()
+    scanDummies()
+    updateDummy()
+end)
+
+dummyAlert.Activated:Connect(function()
+    alertOn = not alertOn
+    dummyAlert.Text = alertOn and "ALERT: ON" or "ALERT: OFF"
+end)
+
+scanDummies()
+updateDummy()--[[
+QUAN DARK SYSTEM V3 FULL MERGED
+PART 2/2
+Dán ngay sau PART 1.
+]]
+
+-- DOOR
+local doors = {}
+local selectedDoor = 1
+local fastOn = false
+local autoOn = false
+local savedPromptSettings = {}
+local doorBusy = false
+
+local doorInfo = label(doorPage,"Đang tìm cửa...",0)
+local doorPrev = pageButton(doorPage,"PREVIOUS",42)
+local doorNext = pageButton(doorPage,"NEXT",79)
+local doorTele = pageButton(doorPage,"TELEPORT TO DOOR",116)
+local doorScan = pageButton(doorPage,"RESCAN DOORS",153)
+local doorFast = pageButton(doorPage,"FAST MODE: OFF",190)
+local doorAuto = pageButton(doorPage,"AUTO OPEN: OFF",227)
+
+local function getPromptPosition(prompt)
+    local parent = prompt.Parent
+    if not parent then return nil end
+
+    if parent:IsA("Attachment") then
+        return parent.WorldCFrame
+    elseif parent:IsA("BasePart") then
+        return parent.CFrame
+    end
+
+    local model = prompt:FindFirstAncestorOfClass("Model")
+    if model then
+        local part = model.PrimaryPart
+            or model:FindFirstChildWhichIsA("BasePart",true)
+
+        if part then return part.CFrame end
+    end
+
+    return nil
+end
+
+local function scanDoors()
+    local oldDoor = doors[selectedDoor]
+    table.clear(doors)
+
+    for _,obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("ProximityPrompt") then
+            table.insert(doors,obj)
+        end
+    end
+
+    table.sort(doors,function(a,b)
+        return a:GetFullName()<b:GetFullName()
+    end)
+
+    if oldDoor then
+        for i,v in ipairs(doors) do
+            if v == oldDoor then
+                selectedDoor = i
+                break
+            end
+        end
+    end
+
+    selectedDoor = math.clamp(
+        selectedDoor,1,math.max(1,#doors))
+end
+
+local function updateDoor()
+    local prompt = doors[selectedDoor]
+
+    if prompt and prompt.Parent then
+        doorInfo.Text = prompt:GetFullName():sub(-35)
+            .." ("..selectedDoor.."/"..#doors..")"
+    else
+        doorInfo.Text = "Không tìm thấy cửa"
+    end
+end
+
+local function setFast(enabled)
+    fastOn = enabled
+
+    for _,prompt in ipairs(doors) do
+        if prompt.Parent then
+            if enabled then
+                if not savedPromptSettings[prompt] then
+                    savedPromptSettings[prompt] = {
+                        HoldDuration = prompt.HoldDuration
+                    }
+                end
+                prompt.HoldDuration = 0
+            else
+                local old = savedPromptSettings[prompt]
+                if old then
+                    prompt.HoldDuration = old.HoldDuration
+                    savedPromptSettings[prompt] = nil
+                end
+            end
+        end
+    end
+
+    doorFast.Text = enabled
+        and "FAST MODE: ON" or "FAST MODE: OFF"
+end
+
+local function teleportToPrompt(prompt)
+    local targetCF = getPromptPosition(prompt)
+    local char = player.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+
+    if not targetCF or not root then return false end
+
+    local targetPosition = targetCF.Position
+    root.CFrame = CFrame.new(targetPosition)
+    root.AssemblyLinearVelocity = Vector3.zero
+
+    return true
+end
+
+local function activateDoor(prompt)
+    if not prompt or not prompt.Parent or not prompt.Enabled then
+        return false
+    end
+
+    local ok = pcall(function()
+        prompt:InputHoldBegin()
+        task.wait(prompt.HoldDuration)
+        prompt:InputHoldEnd()
+    end)
+
+    return ok
+end
+
+doorPrev.Activated:Connect(function()
+    if #doors == 0 then return end
+    selectedDoor = (selectedDoor-2)%#doors+1
+    updateDoor()
+end)
+
+doorNext.Activated:Connect(function()
+    if #doors == 0 then return end
+    selectedDoor = selectedDoor%#doors+1
+    updateDoor()
+end)
+
+doorScan.Activated:Connect(function()
+    scanDoors()
+    updateDoor()
+end)
+
+doorTele.Activated:Connect(function()
+    local prompt = doors[selectedDoor]
+    if prompt and teleportToPrompt(prompt) then
+        doorInfo.Text = "Đã tới vị trí Prompt"
+    end
+end)
+
+doorFast.Activated:Connect(function()
+    setFast(not fastOn)
+end)
+
+doorAuto.Activated:Connect(function()
+    autoOn = not autoOn
+    doorAuto.Text = autoOn
+        and "AUTO OPEN: ON" or "AUTO OPEN: OFF"
+
+    doorInfo.Text = autoOn
+        and "Đang chạy Auto Door..."
+        or "Auto Door đã dừng"
+end)
+
+Workspace.DescendantAdded:Connect(function(obj)
+    if obj:IsA("ProximityPrompt") and fastOn then
+        savedPromptSettings[obj] = {
+            HoldDuration = obj.HoldDuration
+        }
+        obj.HoldDuration = 0
+    end
+end)
+
+-- AUTO DOOR LOOP
+task.spawn(function()
+    while gui.Parent do
+        if autoOn and not doorBusy then
+            doorBusy = true
+
+            scanDoors()
+
+            local prompt = doors[selectedDoor]
+
+            if prompt and prompt.Parent then
+                doorInfo.Text = "Đang tới cửa..."
+
+                if teleportToPrompt(prompt) then
+                    task.wait(0.3)
+
+                    doorInfo.Text = "Đang thử tương tác..."
+
+                    local success = activateDoor(prompt)
+
+                    doorInfo.Text = success
+                        and "Đã gửi tương tác"
+                        or "Tương tác thất bại"
+
+                    task.wait(1)
+                end
+            else
+                doorInfo.Text = "Không tìm thấy cửa"
+                task.wait(1)
+            end
+
+            doorBusy = false
+        end
+
+        task.wait(0.1)
+    end
+end)
+
+scanDoors()
+updateDoor()
+
+-- CANDY
+local CandyConfig = {
+    Keyword = "candy",
+    ScanDelay = 0.01,
+    MaxDistance = 500,
+    TeleportHeight = 3,
+    MaxGroundGap = 25
+}
+
+local candyAuto = false
+local candyESP = true
+local candyObjects = {}
+local candyHighlights = {}
+
+local candyInfo = label(candyPage,"Candy: 0",0)
+local candyAutoBtn = pageButton(candyPage,"AUTO FARM: OFF",42)
+local candyESPBtn = pageButton(candyPage,"ESP: ON",79)
+local candyScanBtn = pageButton(candyPage,"SCAN CANDY",116)
+
+local function getCandyPart(obj)
+    if obj:IsA("BasePart") then
+        return obj
+    end
+
+    if obj:IsA("Model") then
+        return obj.PrimaryPart
+            or obj:FindFirstChildWhichIsA("BasePart",true)
+    end
+end
+
+local function scanCandy()
+    table.clear(candyObjects)
+
+    for _,obj in ipairs(Workspace:GetDescendants()) do
+        if (obj:IsA("BasePart") or obj:IsA("Model"))
+        and string.find(string.lower(obj.Name),
+            CandyConfig.Keyword,1,true) then
+
+            local part = getCandyPart(obj)
+            if part then
+                table.insert(candyObjects,{
+                    Object = obj,
+                    Part = part
+                })
+            end
+        end
+    end
+
+    candyInfo.Text = "Candy tìm thấy: "..#candyObjects
+end
+
+local function updateCandyESP()
+    local found = {}
+
+    for _,item in ipairs(candyObjects) do
+        local obj = item.Object
+        found[obj] = true
+
+        if candyESP and not candyHighlights[obj] then
+            local h = Instance.new("Highlight")
+            h.Name = "QUAN_CANDY_ESP"
+            h.Adornee = obj
+            h.FillColor = Color3.fromRGB(0,255,100)
+            h.OutlineColor = Color3.new(1,1,1)
+            h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            h.Parent = Workspace
+            candyHighlights[obj] = h
+        end
+    end
+
+    for obj,h in pairs(candyHighlights) do
+        if not candyESP or not found[obj] then
+            h:Destroy()
+            candyHighlights[obj] = nil
+        end
+    end
+end
+
+local function safeCandyPosition(item)
+    local part = item.Part
+
+    if not part or not part:IsDescendantOf(Workspace) then
+        return nil
+    end
+
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {
+        player.Character,
+        item.Object
+    }
+
+    local result = Workspace:Raycast(
+        part.Position+Vector3.new(0,10,0),
+        Vector3.new(0,-100,0),
+        params
+    )
+
+    if not result or not result.Instance.CanCollide then
+        return nil
+    end
+
+    local gap = part.Position.Y-result.Position.Y
+
+    if gap < -2 or gap > CandyConfig.MaxGroundGap then
+        return nil
+    end
+
+    return result.Position+
+        Vector3.new(0,CandyConfig.TeleportHeight,0)
+end
+
+local function getNearestCandy()
+    local char = player.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+
+    if not root then return nil end
+
+    local best = nil
+    local shortest = math.huge
+
+    for _,item in ipairs(candyObjects) do
+        local pos = safeCandyPosition(item)
+
+        if pos then
+            local distance = (root.Position-pos).Magnitude
+
+            if distance < shortest
+            and distance <= CandyConfig.MaxDistance then
+                best = {
+                    Item = item,
+                    Position = pos
+                }
+                shortest = distance
+            end
+        end
+    end
+
+    return best
+end
+
+candyAutoBtn.Activated:Connect(function()
+    candyAuto = not candyAuto
+    candyAutoBtn.Text = candyAuto
+        and "AUTO FARM: ON" or "AUTO FARM: OFF"
+end)
+
+candyESPBtn.Activated:Connect(function()
+    candyESP = not candyESP
+    candyESPBtn.Text = candyESP
+        and "ESP: ON" or "ESP: OFF"
+    updateCandyESP()
+end)
+
+candyScanBtn.Activated:Connect(function()
+    scanCandy()
+    updateCandyESP()
+end)
+
+-- AUTO CANDY LOOP
+task.spawn(function()
+    while gui.Parent do
+        scanCandy()
+        updateCandyESP()
+
+        if candyAuto then
+            local target = getNearestCandy()
+            local char = player.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+
+            if target and root then
+                local pos = safeCandyPosition(target.Item)
+
+                if pos then
+                    root.CFrame = CFrame.new(pos)
+                    candyInfo.Text = "Đang tới Candy..."
+                end
+            else
+                candyInfo.Text = "Không có Candy an toàn"
+            end
+        end
+
+        task.wait(CandyConfig.ScanDelay)
+    end
+end)
+
+-- PERIODIC SCAN
+task.spawn(function()
+    while gui.Parent do
+        task.wait(2)
+        scanDummies()
+        updateDummy()
+        scanDoors()
+        updateDoor()
+    end
+end)
+
+-- CLEANUP
+gui.Destroying:Connect(function()
+    candyAuto = false
+    autoOn = false
+
+    for obj,settings in pairs(savedPromptSettings) do
+        if obj and obj.Parent then
+            obj.HoldDuration = settings.HoldDuration
+        end
+    end
+
+    for obj,h in pairs(candyHighlights) do
+        if h then h:Destroy() end
+    end
+
+    for _,obj in ipairs(dummies) do
+        local h = obj:FindFirstChild("QUAN_DUMMY_ESP")
+        if h then h:Destroy() end
+    end
+end)
+
+print("QUAN DARK SYSTEM V3 FULL MERGED LOADED")
