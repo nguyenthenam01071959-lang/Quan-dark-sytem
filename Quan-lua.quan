@@ -1,0 +1,353 @@
+
+-- QUAN LAND OF DIE V9 MAX MOBILE
+-- LocalScript
+-- StarterPlayer > StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+-- CONFIG
+local WALK_SPEED = 24
+local FLY_SPEED = 65
+local JUMP_POWER = 55
+
+local flyEnabled = false
+local noclipEnabled = false
+local shiftEnabled = false
+local menuOpen = true
+
+local character, humanoid, root
+local flyAttachment, flyVelocity, flyAlign
+local flyConnection, noclipConnection
+
+local oldWalkSpeed = 16
+local oldJumpPower = 50
+local oldAutoRotate = true
+
+local function getCharacter(char)
+    character = char
+    humanoid = char:WaitForChild("Humanoid")
+    root = char:WaitForChild("HumanoidRootPart")
+
+    humanoid.WalkSpeed = WALK_SPEED
+    humanoid.UseJumpPower = true
+    humanoid.JumpPower = JUMP_POWER
+end
+
+if player.Character then
+    getCharacter(player.Character)
+end
+
+player.CharacterAdded:Connect(function(char)
+    flyEnabled = false
+    noclipEnabled = false
+    shiftEnabled = false
+    getCharacter(char)
+end)
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "QUAN_LOD_V9_MAX"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local reopen = Instance.new("TextButton")
+reopen.Size = UDim2.fromOffset(48, 48)
+reopen.Position = UDim2.new(0, 15, 0.35, 0)
+reopen.Text = "Q"
+reopen.TextSize = 22
+reopen.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+reopen.TextColor3 = Color3.new(1, 1, 1)
+reopen.Parent = gui
+
+local main = Instance.new("Frame")
+main.Size = UDim2.fromOffset(310, 440)
+main.Position = UDim2.new(0, 75, 0.2, 0)
+main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+main.BorderSizePixel = 0
+main.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = main
+
+local header = Instance.new("TextLabel")
+header.Size = UDim2.new(1, -45, 0, 45)
+header.Position = UDim2.fromOffset(10, 0)
+header.BackgroundTransparency = 1
+header.Text = "QUAN LAND OF DIE V9"
+header.TextColor3 = Color3.new(1, 1, 1)
+header.TextSize = 17
+header.Font = Enum.Font.GothamBold
+header.Parent = main
+
+local close = Instance.new("TextButton")
+close.Size = UDim2.fromOffset(38, 38)
+close.Position = UDim2.new(1, -42, 0, 4)
+close.Text = "×"
+close.TextSize = 25
+close.BackgroundColor3 = Color3.fromRGB(70, 25, 25)
+close.TextColor3 = Color3.new(1, 1, 1)
+close.Parent = main
+
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1, -16, 1, -58)
+scroll.Position = UDim2.fromOffset(8, 50)
+scroll.BackgroundTransparency = 1
+scroll.BorderSizePixel = 0
+scroll.ScrollBarThickness = 4
+scroll.CanvasSize = UDim2.fromOffset(0, 430)
+scroll.Parent = main
+
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 8)
+layout.Parent = scroll
+
+local function makeButton(label, callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, -8, 0, 43)
+    button.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.TextSize = 15
+    button.Font = Enum.Font.Gotham
+    button.Text = label
+    button.Parent = scroll
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 8)
+    c.Parent = button
+
+    button.MouseButton1Click:Connect(callback)
+    return button
+end
+
+local function updateCanvas()
+    scroll.CanvasSize = UDim2.fromOffset(0, layout.AbsoluteContentSize.Y + 10)
+end
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+
+-- SPEED
+local speedLabel
+local function setSpeed(value)
+    WALK_SPEED = math.clamp(value, 0, 100)
+    if humanoid then
+        humanoid.WalkSpeed = WALK_SPEED
+    end
+    if speedLabel then
+        speedLabel.Text = "Walk Speed: " .. WALK_SPEED
+    end
+end
+
+speedLabel = makeButton("Walk Speed: " .. WALK_SPEED, function()
+    setSpeed(WALK_SPEED + 4)
+end)
+
+makeButton("Speed -", function()
+    setSpeed(WALK_SPEED - 4)
+end)
+
+makeButton("Jump +", function()
+    JUMP_POWER = math.clamp(JUMP_POWER + 5, 0, 150)
+    if humanoid then humanoid.JumpPower = JUMP_POWER end
+end)
+
+makeButton("Jump -", function()
+    JUMP_POWER = math.clamp(JUMP_POWER - 5, 0, 150)
+    if humanoid then humanoid.JumpPower = JUMP_POWER end
+end)
+
+-- FLY
+local flyButton
+local function stopFly()
+    flyEnabled = false
+    if flyConnection then flyConnection:Disconnect() flyConnection = nil end
+    if flyVelocity then flyVelocity:Destroy() flyVelocity = nil end
+    if flyAlign then flyAlign:Destroy() flyAlign = nil end
+    if flyAttachment then flyAttachment:Destroy() flyAttachment = nil end
+    if humanoid then
+        humanoid.AutoRotate = oldAutoRotate
+        humanoid.PlatformStand = false
+    end
+    if flyButton then flyButton.Text = "Fly: OFF" end
+end
+
+local function startFly()
+    if not root or not humanoid then return end
+
+    flyEnabled = true
+    oldAutoRotate = humanoid.AutoRotate
+    humanoid.AutoRotate = false
+
+    flyAttachment = Instance.new("Attachment")
+    flyAttachment.Parent = root
+
+    flyVelocity = Instance.new("LinearVelocity")
+    flyVelocity.Attachment0 = flyAttachment
+    flyVelocity.RelativeTo = Enum.ActuatorRelativeTo.World
+    flyVelocity.MaxForce = math.huge
+    flyVelocity.VectorVelocity = Vector3.zero
+    flyVelocity.Parent = root
+
+    flyAlign = Instance.new("AlignOrientation")
+    flyAlign.Attachment0 = flyAttachment
+    flyAlign.Mode = Enum.OrientationAlignmentMode.OneAttachment
+    flyAlign.MaxTorque = math.huge
+    flyAlign.Responsiveness = 20
+    flyAlign.Parent = root
+
+    flyConnection = RunService.RenderStepped:Connect(function()
+        if not flyEnabled or not root or not root.Parent then
+            stopFly()
+            return
+        end
+
+        local move = humanoid.MoveDirection
+        local cam = workspace.CurrentCamera
+        local look = cam.CFrame.LookVector
+        local right = cam.CFrame.RightVector
+
+        local forward = Vector3.new(look.X, 0, look.Z)
+        local side = Vector3.new(right.X, 0, right.Z)
+
+        if forward.Magnitude > 0.01 then forward = forward.Unit end
+        if side.Magnitude > 0.01 then side = side.Unit end
+
+        local forwardInput = move:Dot(forward)
+        local sideInput = move:Dot(side)
+
+        local direction = look * forwardInput + side * sideInput
+        if direction.Magnitude > 1 then direction = direction.Unit end
+
+        flyVelocity.VectorVelocity = direction * FLY_SPEED
+
+        local flatLook = Vector3.new(look.X, 0, look.Z)
+        if flatLook.Magnitude > 0.01 then
+            flyAlign.CFrame = CFrame.lookAt(
+                Vector3.zero, flatLook.Unit, Vector3.yAxis
+            )
+        end
+    end)
+
+    if flyButton then flyButton.Text = "Fly: ON" end
+end
+
+flyButton = makeButton("Fly: OFF", function()
+    if flyEnabled then
+        stopFly()
+    else
+        startFly()
+    end
+end)
+
+makeButton("Fly Speed +", function()
+    FLY_SPEED = math.clamp(FLY_SPEED + 10, 10, 250)
+end)
+
+makeButton("Fly Speed -", function()
+    FLY_SPEED = math.clamp(FLY_SPEED - 10, 10, 250)
+end)
+
+-- NOCLIP (chỉ trong game Studio của mày)
+local noclipButton
+local function stopNoclip()
+    noclipEnabled = false
+    if noclipConnection then
+        noclipConnection:Disconnect()
+        noclipConnection = nil
+    end
+    if character then
+        for _, obj in ipairs(character:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                obj.CanCollide = true
+            end
+        end
+    end
+    if noclipButton then noclipButton.Text = "Noclip: OFF" end
+end
+
+local function startNoclip()
+    if not character then return end
+    noclipEnabled = true
+
+    noclipConnection = RunService.Stepped:Connect(function()
+        if not noclipEnabled or not character then return end
+        for _, obj in ipairs(character:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                obj.CanCollide = false
+            end
+        end
+    end)
+
+    if noclipButton then noclipButton.Text = "Noclip: ON" end
+end
+
+noclipButton = makeButton("Noclip: OFF", function()
+    if noclipEnabled then
+        stopNoclip()
+    else
+        startNoclip()
+    end
+end)
+
+-- SHIFT LOCK: camera offset only, does not force character rotation
+local shiftButton
+local function setShiftLock(enabled)
+    shiftEnabled = enabled
+    if humanoid then
+        humanoid.AutoRotate = not (flyEnabled)
+    end
+    player.CameraMode = Enum.CameraMode.Classic
+    if humanoid then
+        humanoid.CameraOffset = enabled and Vector3.new(1.7, 0, 0) or Vector3.zero
+    end
+    if shiftButton then
+        shiftButton.Text = enabled and "Shift Lock: ON" or "Shift Lock: OFF"
+    end
+end
+
+shiftButton = makeButton("Shift Lock: OFF", function()
+    setShiftLock(not shiftEnabled)
+end)
+
+-- DRAG MENU
+local dragging, dragStart, startPos
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = main.Position
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+close.MouseButton1Click:Connect(function()
+    main.Visible = false
+    menuOpen = false
+end)
+
+reopen.MouseButton1Click:Connect(function()
+    main.Visible = true
+    menuOpen = true
+end)
