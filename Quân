@@ -1,0 +1,454 @@
+
+-- QUAN LAND OF DIE V9 MAX MOBILE V2
+-- LocalScript
+-- StarterPlayer > StarterPlayerScripts
+-- Dành cho game Roblox Studio của mày
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+-- CONFIG
+local FLY_SPEED = 65
+local WALK_SPEED = 16
+local JUMP_POWER = 50
+
+local flying = false
+local shiftLock = false
+local espEnabled = false
+local vertical = 0
+
+local character, humanoid, root
+local attachment, velocity, orientation
+local flyConnection
+local highlights = {}
+
+local function refreshCharacter()
+    character = player.Character
+    if not character then return end
+
+    humanoid = character:FindFirstChildOfClass("Humanoid")
+    root = character:FindFirstChild("HumanoidRootPart")
+end
+
+refreshCharacter()
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "QUAN_LOD_V9"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local function round(obj, radius)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, radius)
+    c.Parent = obj
+end
+
+local main = Instance.new("Frame")
+main.Size = UDim2.fromOffset(255, 420)
+main.Position = UDim2.new(0.5, -127, 0.5, -210)
+main.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+main.BorderSizePixel = 0
+main.Parent = gui
+round(main, 10)
+
+local header = Instance.new("TextLabel")
+header.Size = UDim2.new(1, -42, 0, 38)
+header.BackgroundTransparency = 1
+header.Text = "QUAN | LAND OF DIE V9"
+header.TextColor3 = Color3.new(1, 1, 1)
+header.TextSize = 14
+header.Font = Enum.Font.GothamBold
+header.Parent = main
+
+local close = Instance.new("TextButton")
+close.Size = UDim2.fromOffset(34, 30)
+close.Position = UDim2.new(1, -38, 0, 4)
+close.Text = "×"
+close.TextSize = 22
+close.TextColor3 = Color3.new(1, 1, 1)
+close.BackgroundColor3 = Color3.fromRGB(130, 35, 35)
+close.Parent = main
+round(close, 7)
+
+local reopen = Instance.new("TextButton")
+reopen.Size = UDim2.fromOffset(48, 48)
+reopen.Position = UDim2.new(0, 15, 0.4, 0)
+reopen.Text = "Q"
+reopen.TextSize = 22
+reopen.TextColor3 = Color3.new(1, 1, 1)
+reopen.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+reopen.Visible = false
+reopen.Parent = gui
+round(reopen, 24)
+
+close.Activated:Connect(function()
+    main.Visible = false
+    reopen.Visible = true
+end)
+
+reopen.Activated:Connect(function()
+    main.Visible = true
+    reopen.Visible = false
+end)
+
+-- DRAG MENU
+local dragging = false
+local dragStart
+local startPosition
+
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPosition = main.Position
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and (
+        input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch
+    ) then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(
+            startPosition.X.Scale,
+            startPosition.X.Offset + delta.X,
+            startPosition.Y.Scale,
+            startPosition.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- SCROLL CONTENT
+local content = Instance.new("ScrollingFrame")
+content.Position = UDim2.fromOffset(8, 42)
+content.Size = UDim2.new(1, -16, 1, -50)
+content.BackgroundTransparency = 1
+content.BorderSizePixel = 0
+content.ScrollBarThickness = 3
+content.CanvasSize = UDim2.fromOffset(0, 510)
+content.Parent = main
+
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 6)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Parent = content
+
+local function label(text)
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(1, -5, 0, 25)
+    l.BackgroundTransparency = 1
+    l.Text = text
+    l.TextColor3 = Color3.fromRGB(100, 190, 255)
+    l.TextSize = 13
+    l.Font = Enum.Font.GothamBold
+    l.Parent = content
+    return l
+end
+
+local function button(text, callback)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, -5, 0, 38)
+    b.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+    b.TextColor3 = Color3.new(1, 1, 1)
+    b.TextSize = 14
+    b.Font = Enum.Font.Gotham
+    b.Text = text
+    b.Parent = content
+    round(b, 7)
+    b.Activated:Connect(callback)
+    return b
+end
+
+-- FLY SYSTEM
+local function stopFly()
+    flying = false
+
+    if flyConnection then
+        flyConnection:Disconnect()
+        flyConnection = nil
+    end
+
+    if velocity then velocity:Destroy() velocity = nil end
+    if orientation then orientation:Destroy() orientation = nil end
+    if attachment then attachment:Destroy() attachment = nil end
+
+    if humanoid then
+        humanoid.AutoRotate = true
+        humanoid.PlatformStand = false
+        humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+    end
+end
+
+local function startFly()
+    refreshCharacter()
+    if not root or not humanoid then return end
+
+    stopFly()
+    flying = true
+    humanoid.AutoRotate = false
+
+    attachment = Instance.new("Attachment")
+    attachment.Parent = root
+
+    velocity = Instance.new("LinearVelocity")
+    velocity.Attachment0 = attachment
+    velocity.RelativeTo = Enum.ActuatorRelativeTo.World
+    velocity.MaxForce = math.huge
+    velocity.VectorVelocity = Vector3.zero
+    velocity.Parent = root
+
+    orientation = Instance.new("AlignOrientation")
+    orientation.Attachment0 = attachment
+    orientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
+    orientation.MaxTorque = math.huge
+    orientation.Responsiveness = 20
+    orientation.Parent = root
+
+    flyConnection = RunService.RenderStepped:Connect(function()
+        if not flying or not root or not root.Parent
+        or not humanoid or humanoid.Health <= 0 then
+            stopFly()
+            return
+        end
+
+        local camera = workspace.CurrentCamera
+        if not camera then return end
+
+        -- Lấy hướng joystick/WASD
+        local move = humanoid.MoveDirection
+
+        -- Hướng camera đầy đủ, bao gồm cả góc ngẩng/cúi
+        local look = camera.CFrame.LookVector.Unit
+
+        -- Lấy hướng ngang của camera
+        local right = camera.CFrame.RightVector
+        right = Vector3.new(right.X, 0, right.Z)
+
+        if right.Magnitude < 0.001 then
+            right = Vector3.new(1, 0, 0)
+        else
+            right = right.Unit
+        end
+
+        local forwardInput = 0
+        local sideInput = 0
+
+        local flatForward = Vector3.yAxis:Cross(right).Unit
+
+        if move.Magnitude > 0.01 then
+            forwardInput = move:Dot(flatForward)
+            sideInput = move:Dot(right)
+        end
+
+        -- W/S đi theo hướng camera 3D
+        -- A/D đi ngang theo camera
+        local direction =
+            look * forwardInput
+            + right * sideInput
+            + Vector3.new(0, vertical, 0)
+
+        if direction.Magnitude > 1 then
+            direction = direction.Unit
+        end
+
+        velocity.VectorVelocity = direction * FLY_SPEED
+
+        -- Giữ nhân vật thẳng đứng, chỉ xoay theo hướng ngang camera
+        local flatLook = Vector3.new(look.X, 0, look.Z)
+
+        if flatLook.Magnitude > 0.01 then
+            orientation.CFrame = CFrame.lookAt(
+                Vector3.zero,
+                flatLook.Unit,
+                Vector3.yAxis
+            )
+        end
+    end)
+end
+
+label("FLY - CAMERA 3D")
+
+local flyButton
+flyButton = button("FLY: OFF", function()
+    if flying then
+        stopFly()
+        flyButton.Text = "FLY: OFF"
+    else
+        startFly()
+        flyButton.Text = "FLY: ON"
+    end
+end)
+
+local upButton
+upButton = button("▲ BAY LÊN", function()
+    vertical = vertical == 1 and 0 or 1
+    upButton.Text = vertical == 1 and "▲ ĐANG BẬT" or "▲ BAY LÊN"
+end)
+
+local downButton
+downButton = button("▼ BAY XUỐNG", function()
+    vertical = vertical == -1 and 0 or -1
+    downButton.Text = vertical == -1 and "▼ ĐANG BẬT" or "▼ BAY XUỐNG"
+end)
+
+local flyLabel = label("FLY SPEED: " .. FLY_SPEED)
+
+button("FLY SPEED +", function()
+    FLY_SPEED = math.clamp(FLY_SPEED + 10, 10, 250)
+    flyLabel.Text = "FLY SPEED: " .. FLY_SPEED
+end)
+
+button("FLY SPEED -", function()
+    FLY_SPEED = math.clamp(FLY_SPEED - 10, 10, 250)
+    flyLabel.Text = "FLY SPEED: " .. FLY_SPEED
+end)
+
+-- PLAYER SETTINGS
+label("PLAYER SETTINGS")
+
+local walkLabel = label("WALK SPEED: " .. WALK_SPEED)
+
+button("WALK SPEED +", function()
+    WALK_SPEED = math.clamp(WALK_SPEED + 5, 5, 150)
+    refreshCharacter()
+    if humanoid then humanoid.WalkSpeed = WALK_SPEED end
+    walkLabel.Text = "WALK SPEED: " .. WALK_SPEED
+end)
+
+button("WALK SPEED -", function()
+    WALK_SPEED = math.clamp(WALK_SPEED - 5, 5, 150)
+    refreshCharacter()
+    if humanoid then humanoid.WalkSpeed = WALK_SPEED end
+    walkLabel.Text = "WALK SPEED: " .. WALK_SPEED
+end)
+
+local jumpLabel = label("JUMP POWER: " .. JUMP_POWER)
+
+button("JUMP +", function()
+    JUMP_POWER = math.clamp(JUMP_POWER + 10, 10, 200)
+    refreshCharacter()
+    if humanoid then
+        humanoid.UseJumpPower = true
+        humanoid.JumpPower = JUMP_POWER
+    end
+    jumpLabel.Text = "JUMP POWER: " .. JUMP_POWER
+end)
+
+button("JUMP -", function()
+    JUMP_POWER = math.clamp(JUMP_POWER - 10, 10, 200)
+    refreshCharacter()
+    if humanoid then
+        humanoid.UseJumpPower = true
+        humanoid.JumpPower = JUMP_POWER
+    end
+    jumpLabel.Text = "JUMP POWER: " .. JUMP_POWER
+end)
+
+-- CUSTOM SHIFT LOCK
+label("CUSTOM SHIFT LOCK")
+
+local shiftButton
+shiftButton = button("SHIFT LOCK: OFF", function()
+    shiftLock = not shiftLock
+    refreshCharacter()
+
+    if humanoid then
+        humanoid.CameraOffset =
+            shiftLock and Vector3.new(1.7, 0, 0)
+            or Vector3.zero
+    end
+
+    if UIS.MouseEnabled then
+        UIS.MouseBehavior = shiftLock
+            and Enum.MouseBehavior.LockCenter
+            or Enum.MouseBehavior.Default
+    end
+
+    shiftButton.Text =
+        "SHIFT LOCK: " .. (shiftLock and "ON" or "OFF")
+end)
+
+-- ESP
+label("ESP PLAYERS")
+
+local function clearESP()
+    for _, h in pairs(highlights) do
+        if h then h:Destroy() end
+    end
+    table.clear(highlights)
+end
+
+local function updateESP()
+    clearESP()
+    if not espEnabled then return end
+
+    for _, target in ipairs(Players:GetPlayers()) do
+        if target ~= player and target.Character then
+            local h = Instance.new("Highlight")
+            h.FillTransparency = 0.8
+            h.OutlineColor = Color3.fromRGB(0, 200, 255)
+            h.Adornee = target.Character
+            h.Parent = gui
+            highlights[target] = h
+        end
+    end
+end
+
+local espButton
+espButton = button("ESP: OFF", function()
+    espEnabled = not espEnabled
+    espButton.Text = "ESP: " .. (espEnabled and "ON" or "OFF")
+    updateESP()
+end)
+
+Players.PlayerAdded:Connect(function()
+    task.wait(1)
+    updateESP()
+end)
+
+Players.PlayerRemoving:Connect(function(target)
+    if highlights[target] then
+        highlights[target]:Destroy()
+        highlights[target] = nil
+    end
+end)
+
+-- RESPAWN SAFETY
+player.CharacterAdded:Connect(function()
+    stopFly()
+    vertical = 0
+    shiftLock = false
+
+    task.wait(0.5)
+    refreshCharacter()
+
+    if humanoid then
+        humanoid.UseJumpPower = true
+        humanoid.WalkSpeed = WALK_SPEED
+        humanoid.JumpPower = JUMP_POWER
+    end
+
+    if espEnabled then
+        updateESP()
+    end
+
+    flyButton.Text = "FLY: OFF"
+    upButton.Text = "▲ BAY LÊN"
+    downButton.Text = "▼ BAY XUỐNG"
+    shiftButton.Text = "SHIFT LOCK: OFF"
+end)
+
+print("QUAN LAND OF DIE V9 MAX MOBILE V2 LOADED")
